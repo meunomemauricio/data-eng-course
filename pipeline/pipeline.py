@@ -1,3 +1,5 @@
+"""Minimal sample of pipeline ingestion script."""
+
 import sys
 
 import pandas as pd

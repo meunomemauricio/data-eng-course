@@ -8,7 +8,7 @@ dependencies = [
   "pre-commit>=4.5.1",
 ]
 [tool.ruff]
-line-length = 99
+line-length = 79
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -21,6 +21,6 @@ force_grid_wrap = 0
 include_trailing_comma = true
 known_first_party = ["sshmih"]
 known_third_party = ["torch"]
-line_length = 99
+line_length = 79
 multi_line_output = 3
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
