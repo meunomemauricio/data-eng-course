@@ -3,7 +3,7 @@
 import click
 import pandas as pd
 from click.exceptions import Exit
-from sqlalchemy import create_engine, text
+from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 DTYPE = {
@@ -27,9 +27,15 @@ DTYPE = {
 
 DATE_FIELDS = ["tpep_pickup_datetime", "tpep_dropoff_datetime"]
 
-BASE_URL = (
+TRIP_BASE_URL = (
     "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow"
 )
+ZONE_LOOKUP_URL = (
+    "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+)
+
+TRIP_TABLE = "taxi_trips"
+LOOKUP_TABLE = "zones"
 
 
 @click.command()
@@ -40,12 +46,18 @@ BASE_URL = (
 @click.option("--pg-db", default="ny_taxi", help="PostgreSQL database name")
 @click.option(
     "--target-table",
-    default="yellow_taxi_data",
+    default="",
     help="Target table name",
 )
 def main(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
-    print("Ingesting NY Taxi Dataset")
     url = f"postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
+
+    engine = _get_db_engine(url=url)
+    _ingest_trip_data(engine=engine)
+    _ingest_zone_lookup(engine=engine)
+
+
+def _get_db_engine(url: str) -> Engine:
     print("Engine URL:", url)
     engine = create_engine(url=url)
     try:
@@ -55,8 +67,14 @@ def main(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
         print("DB not reachable:", e)
         raise Exit()
 
-    dataset_url = f"{BASE_URL}/yellow_tripdata_2021-01.csv.gz"
-    print("Dataset URL:", dataset_url)
+    return engine
+
+
+def _ingest_trip_data(engine: Engine):
+    print("Ingesting NY Taxi Trip Dataset")
+
+    dataset_url = f"{TRIP_BASE_URL}/yellow_tripdata_2021-01.csv.gz"
+    print("Trip Dataset URL:", dataset_url)
 
     df_iter = pd.read_csv(
         dataset_url,
@@ -70,13 +88,19 @@ def main(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
     for df_chunk in df_iter:
         if first:
             df_chunk.head(0).to_sql(
-                name=target_table, con=engine, if_exists="replace"
+                name=TRIP_TABLE, con=engine, if_exists="replace"
             )
             first = False
             print("Table Created")
 
-        df_chunk.to_sql(name=target_table, con=engine, if_exists="append")
+        df_chunk.to_sql(name=TRIP_TABLE, con=engine, if_exists="append")
         print("Inserted", len(df_chunk))
+
+
+def _ingest_zone_lookup(engine: Engine):
+    print("Ingesting NY Zone Lookup Table")
+    df = pd.read_csv(ZONE_LOOKUP_URL)
+    df.to_sql(name=LOOKUP_TABLE, con=engine, if_exists="replace")
 
 
 if __name__ == "__main__":
