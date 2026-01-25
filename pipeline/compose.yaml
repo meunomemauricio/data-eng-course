@@ -20,6 +20,15 @@ services:
     ports:
       - "8085:80"
 
+  taxi_ingest:
+    build: .
+    depends_on:
+      - pgdatabase
+    environment:
+      DATABASE_URL: "postgresql://root:root@pgdatabase:5432/ny_taxi"
+    profiles:
+      - manual
+
 volumes:
   ny_taxi_pg_data:
   pgadmin_data:

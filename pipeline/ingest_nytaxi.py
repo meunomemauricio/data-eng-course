@@ -2,7 +2,9 @@
 
 import click
 import pandas as pd
-from sqlalchemy import create_engine
+from click.exceptions import Exit
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import SQLAlchemyError
 
 DTYPE = {
     "VendorID": "Int64",
@@ -33,7 +35,7 @@ BASE_URL = (
 @click.command()
 @click.option("--pg-user", default="root", help="PostgreSQL user")
 @click.option("--pg-pass", default="root", help="PostgreSQL password")
-@click.option("--pg-host", default="localhost", help="PostgreSQL host")
+@click.option("--pg-host", default="pgdatabase", help="PostgreSQL host")
 @click.option("--pg-port", default=5432, type=int, help="PostgreSQL port")
 @click.option("--pg-db", default="ny_taxi", help="PostgreSQL database name")
 @click.option(
@@ -46,6 +48,12 @@ def main(pg_user, pg_pass, pg_host, pg_port, pg_db, target_table):
     url = f"postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
     print("Engine URL:", url)
     engine = create_engine(url=url)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except SQLAlchemyError as e:
+        print("DB not reachable:", e)
+        raise Exit()
 
     dataset_url = f"{BASE_URL}/yellow_tripdata_2021-01.csv.gz"
     print("Dataset URL:", dataset_url)
