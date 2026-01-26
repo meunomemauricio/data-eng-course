@@ -6,32 +6,13 @@ from click.exceptions import Exit
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
-DTYPE = {
-    "VendorID": "Int64",
-    "passenger_count": "Int64",
-    "trip_distance": "float64",
-    "RatecodeID": "Int64",
-    "store_and_fwd_flag": "string",
-    "PULocationID": "Int64",
-    "DOLocationID": "Int64",
-    "payment_type": "Int64",
-    "fare_amount": "float64",
-    "extra": "float64",
-    "mta_tax": "float64",
-    "tip_amount": "float64",
-    "tolls_amount": "float64",
-    "improvement_surcharge": "float64",
-    "total_amount": "float64",
-    "congestion_surcharge": "float64",
-}
-
-DATE_FIELDS = ["tpep_pickup_datetime", "tpep_dropoff_datetime"]
-
-TRIP_BASE_URL = (
-    "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow"
+TRIPS_URL = (
+    "https://d37ci6vzurychx.cloudfront.net/trip-data/"
+    "green_tripdata_2025-11.parquet"
 )
 ZONE_LOOKUP_URL = (
-    "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+    "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/misc/"
+    "taxi_zone_lookup.csv"
 )
 
 TRIP_TABLE = "taxi_trips"
@@ -72,35 +53,18 @@ def _get_db_engine(url: str) -> Engine:
 
 def _ingest_trip_data(engine: Engine):
     print("Ingesting NY Taxi Trip Dataset")
-
-    dataset_url = f"{TRIP_BASE_URL}/yellow_tripdata_2021-01.csv.gz"
-    print("Trip Dataset URL:", dataset_url)
-
-    df_iter = pd.read_csv(
-        dataset_url,
-        dtype=DTYPE,
-        parse_dates=DATE_FIELDS,
-        iterator=True,
-        chunksize=100000,
-    )
-
-    first = True
-    for df_chunk in df_iter:
-        if first:
-            df_chunk.head(0).to_sql(
-                name=TRIP_TABLE, con=engine, if_exists="replace"
-            )
-            first = False
-            print("Table Created")
-
-        df_chunk.to_sql(name=TRIP_TABLE, con=engine, if_exists="append")
-        print("Inserted", len(df_chunk))
+    print("Trip Dataset URL:", TRIPS_URL)
+    df = pd.read_parquet(TRIPS_URL)
+    df.to_sql(name=TRIP_TABLE, con=engine, if_exists="replace")
+    print("Trip data imported.")
 
 
 def _ingest_zone_lookup(engine: Engine):
     print("Ingesting NY Zone Lookup Table")
+    print("Zone Data URL:", ZONE_LOOKUP_URL)
     df = pd.read_csv(ZONE_LOOKUP_URL)
     df.to_sql(name=LOOKUP_TABLE, con=engine, if_exists="replace")
+    print("Zone data imported.")
 
 
 if __name__ == "__main__":

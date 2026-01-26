@@ -1,7 +1,7 @@
 [project]
-name = "module-1"
-version = "0.1.0"
-description = "Pipeline minimal example"
+name = "homerwork1"
+version = "1.0.0"
+description = "Module 1 Homework"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -10,10 +10,4 @@ dependencies = [
   "psycopg2-binary>=2.9.11",
   "pyarrow>=23.0.0",
   "sqlalchemy>=2.0.46",
-  "tqdm>=4.67.1",
-]
-
-[dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
 ]

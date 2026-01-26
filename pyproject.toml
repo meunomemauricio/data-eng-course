@@ -14,7 +14,7 @@ line-length = 79
 docstring-code-format = true
 
 [tool.isort]
-py_version = 310
+py_version = 313
 profile = "black"
 combine_as_imports = true
 force_grid_wrap = 0
